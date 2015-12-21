@@ -4,20 +4,35 @@ using System.Collections.Generic;
 
 public class FramingCamera_BHV : MonoBehaviour {
 
+    //Referência para o canvas que contem os frames
 	public Canvas framesCanvas;
+
+    //Referência para o Transform alvo a ser seguido
     public Transform targetTransform;
+
+    //Define uma velocidade de interpolação da posição e da escala da camera
     public float interpSpeed = 0.1f;
+
+    //Define se os frames considerados pelo script são dinamicos (atualizam a todo frame)
     public bool dynamicFrames = false;
 
-    private List<RectTransform> frameList;
+    //Define o tamanho padrão da camera ortográfica para quando nenhum frame está sendo usado
     public float defaultCameraSize = 3f;
+
+
+    //Variavel interna de referência para o componente camera desse objeto
     protected Camera myCamera;
 
+    //Variavel interna que guarda a lista dos frames sendo considerados
+    private List<RectTransform> frameList;
+
+    //Inicializa as variaveis internas
     void Start() {
         myCamera = this.GetComponent<Camera>();
         GetFrameList();
     }
 
+    //A todo update, acha o quadro e interpola a camera para ele
     void Update() {
         if (dynamicFrames) {
             GetFrameList();
@@ -26,6 +41,7 @@ public class FramingCamera_BHV : MonoBehaviour {
         UpdateCamera(currentFrame);
     }
 
+    //Faz a interpolação da posição e do tamanho da camera para o quadro passado (ou para o alvo padrão no caso de valor nulo)
     protected virtual void UpdateCamera(RectTransform frame){
         Vector3 goalCameraPosition;
         float goalCameraSize;
@@ -34,14 +50,11 @@ public class FramingCamera_BHV : MonoBehaviour {
         Rect cameraBox = new Rect(cameraMins.x, cameraMins.y, cameraMaxs.x - cameraMins.x, cameraMaxs.y - cameraMins.y);
         if (frame == null) {
             Rect canvasBox = new Rect(framesCanvas.GetComponent<RectTransform>().rect);
-            canvasBox.position = canvasBox.position + (Vector2)framesCanvas.transform.position;
+            canvasBox.position += (Vector2)framesCanvas.transform.position;
 
             goalCameraPosition = targetTransform.position;
             if (goalCameraPosition.x < canvasBox.xMin + (cameraBox.width / 2)) {
                 goalCameraPosition.x = canvasBox.xMin + (cameraBox.width / 2);
-                Debug.Log(myCamera.rect.width);
-                Debug.Log(canvasBox.xMin);
-                Debug.Log(goalCameraPosition.x);
             }
             else if (goalCameraPosition.x > canvasBox.xMax - (cameraBox.width / 2)) {
                 goalCameraPosition.x = canvasBox.xMax - (cameraBox.width / 2);
@@ -73,6 +86,7 @@ public class FramingCamera_BHV : MonoBehaviour {
 
     }
 
+    //Função retorna o quadro mais próximo do alvo em que ele estiver contido
     protected virtual RectTransform FindCurrentFrame(){
         if (frameList != null) {
             float minDist = float.MaxValue;
@@ -93,18 +107,11 @@ public class FramingCamera_BHV : MonoBehaviour {
         return null;
     }
 
+    //Função que atualiza a lista de frames do mundo
     private void GetFrameList() {
         frameList = new List<RectTransform>();
         frameList.AddRange(framesCanvas.gameObject.GetComponentsInChildren<RectTransform>());
         frameList.Remove(framesCanvas.GetComponent<RectTransform>());
-        Debug.Log(frameList.Count);
-        for (int i = 0; i < frameList.Count; i++) {
-            Debug.Log("Elemento: " + i);
-            Debug.Log(frameList[i]);
-            Debug.Log(frameList[i].rect);
-            Debug.Log(frameList[i].rect.position);
-        }
-
     }
 
 }
