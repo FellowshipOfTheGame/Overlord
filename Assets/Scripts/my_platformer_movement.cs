@@ -10,6 +10,7 @@ public class my_platformer_movement : MonoBehaviour {
 	private Animator animator; // Nao usei mas ta ae
 	private Transform topHead, feet;
 	private Rigidbody2D playerRigidBody;
+	private RaycastHit2D detectedObject;
 
 	void Awake () {
 		// Pega os componentes necessarios do player
@@ -56,6 +57,10 @@ public class my_platformer_movement : MonoBehaviour {
 			playerPosition.y -= 0.5f;
 			grabAvailable = Physics2D.Raycast (playerPosition, (facingRight) ? Vector2.right : Vector2.left, 0.5f, 1 << LayerMask.NameToLayer ("Object"));
 		}
+
+		// Caso tenha detectado colisao com um objeto, armazena numa variavel qual o objeto com o qual houve a colisao
+		if(grabAvailable)
+			detectedObject = Physics2D.Raycast (playerPosition, (facingRight) ? Vector2.right : Vector2.left, 0.5f, 1 << LayerMask.NameToLayer ("Object"));
 	}
 
 	// Chama a funcao de raycasting acima
@@ -64,11 +69,22 @@ public class my_platformer_movement : MonoBehaviour {
 	}
 
 	// Funcao para realizar o giro
-	void Flip(){
+	void Flip(bool grab){
 		// Faz com que os objetos ligados ao player mudem de lado em relaçao ao eixo x
 		Vector3 aux = transform.localScale;
 		aux.x *= -1;
 		transform.localScale = aux;
+		// Caso o jogador esteja carregando um objeto, muda o objeto de lado
+		if (grab && grabAvailable) {
+			// Armazena a posicao do objeto numa variavel (o valor x nao pode ser acessado diretamente)
+			Vector2 objectPosition = detectedObject.transform.position;
+			// Calcula a diferenca no eixo x
+			float difference = objectPosition.x - this.transform.position.x;
+			// Obtem qual deve ser a nova posicao
+			objectPosition.x -= 2*difference;
+			// altera a posicao do objeto
+			detectedObject.transform.position = objectPosition;
+		}
 		// Inverte a variavel
 		facingRight = (facingRight) ? false : true;
 	}
@@ -90,7 +106,7 @@ public class my_platformer_movement : MonoBehaviour {
 		} else {
 			// Caso o jogador tente se mover para um lado oposto ao qual esta atualmente virado, realiza o giro
 			if(!((xMove > 0 && facingRight) || (xMove < 0 && !facingRight)))
-				Flip();
+				Flip(grab);
 
 			// A variavel airspeed armazena um modificador, para que no ar a velocidade do jogador seja tres quartos da padrao
 			float airSpeed = (grounded)? 1f : 0.75f;
@@ -117,8 +133,9 @@ public class my_platformer_movement : MonoBehaviour {
 			playerRigidBody.velocity = new Vector2(playerRigidBody.velocity.x, (-1f)*maxFallingSpeed);
 		}
 
-		// Alterar a velocidade do objeto sendo segurado para ser igual a velocidade do player (to do)
+		// Altera a velocidade do objeto sendo segurado para ser igual a velocidade do player
 		if (grab && grabAvailable) {
+			detectedObject.rigidbody.velocity = playerRigidBody.velocity;
 		}
 	}
 }
