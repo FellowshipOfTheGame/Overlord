@@ -35,9 +35,9 @@ public class my_platformer_movement : MonoBehaviour {
 		if (!hitHead) hitHead = Physics2D.Raycast(topHead.position, Vector2.down, 0.1f, 1 << LayerMask.NameToLayer ("Ground"));
 		if (!hitHead) hitHead = Physics2D.Raycast(new Vector2(topHead.position.x+0.5f, topHead.position.y), Vector2.down, 0.1f, 1 << LayerMask.NameToLayer ("Ground"));
 
-		grounded = Physics2D.Raycast(new Vector2(feet.position.x-0.5f, feet.position.y), Vector2.down, 0.1f, (1 << LayerMask.NameToLayer ("Ground")) | (1 << LayerMask.NameToLayer("Platform")) | (1 << LayerMask.NameToLayer("Object")) );
-		if (!grounded) grounded = Physics2D.Raycast(feet.position, Vector2.down, 0.1f, (1 << LayerMask.NameToLayer ("Ground")) | (1 << LayerMask.NameToLayer("Platform")) | (1 << LayerMask.NameToLayer("Object")) );
-		if (!grounded) grounded = Physics2D.Raycast(new Vector2(feet.position.x+0.5f, feet.position.y), Vector2.down, 0.1f, (1 << LayerMask.NameToLayer ("Ground")) | (1 << LayerMask.NameToLayer("Platform")) | (1 << LayerMask.NameToLayer("Object")) );
+		grounded = Physics2D.Raycast(new Vector2(feet.position.x-0.5f, feet.position.y), Vector2.down, 0.1f, (1 << LayerMask.NameToLayer ("Ground")) | (1 << LayerMask.NameToLayer("Object")) );
+		if (!grounded) grounded = Physics2D.Raycast(feet.position, Vector2.down, 0.1f, (1 << LayerMask.NameToLayer ("Ground")) | (1 << LayerMask.NameToLayer("Object")) );
+		if (!grounded) grounded = Physics2D.Raycast(new Vector2(feet.position.x+0.5f, feet.position.y), Vector2.down, 0.1f, (1 << LayerMask.NameToLayer ("Ground")) | (1 << LayerMask.NameToLayer("Object")) );
 		// Analisa a posicao do player para saber de onde os raios deve ser criados
 		Vector2 playerPosition = playerRigidBody.position;
 		// Analisa se os raios devem ser criados pelo lado esquerdo ou direito
@@ -96,46 +96,51 @@ public class my_platformer_movement : MonoBehaviour {
 		// Caso nenhuma direcao esteja sendo pressionada
 		if (xMove == 0) {
 			// Se o jogador estiver no chao
-			if(grounded)
+			if (grounded)
 				// Para completamente
-				playerRigidBody.velocity = new Vector2(0, 0);
+				playerRigidBody.velocity = new Vector2 (0, 0);
 			// Caso contrario
 			else
 				// Zera apenas a velocidade no eixo x
-				playerRigidBody.velocity = new Vector2(0, playerRigidBody.velocity.y);
+				playerRigidBody.velocity = new Vector2 (0, playerRigidBody.velocity.y);
 		} else {
 			// Caso o jogador tente se mover para um lado oposto ao qual esta atualmente virado, realiza o giro
-			if(!((xMove > 0 && facingRight) || (xMove < 0 && !facingRight)))
-				Flip(grab);
+			if (!((xMove > 0 && facingRight) || (xMove < 0 && !facingRight)))
+				Flip (grab);
 
 			// A variavel airspeed armazena um modificador, para que no ar a velocidade do jogador seja tres quartos da padrao
-			float airSpeed = (grounded)? 1f : 0.75f;
+			float airSpeed = (grounded) ? 1f : 0.75f;
 			// Caso seja pressionado para movimentar-se a direita
-			if(xMove > 0){
+			if (xMove > 0) {
 				// Altera a velocidade com valor positivo
-				playerRigidBody.velocity = new Vector2(maxMoveSpeed*airSpeed*grabSpeed, playerRigidBody.velocity.y);
-			// E caso seja pressionado para movimentar-se a esquerda
-			}else{
+				playerRigidBody.velocity = new Vector2 (maxMoveSpeed * airSpeed * grabSpeed, playerRigidBody.velocity.y);
+				// E caso seja pressionado para movimentar-se a esquerda
+			} else {
 				// Altera a velocidade com valor negativo
-				playerRigidBody.velocity = new Vector2((-1f)*maxMoveSpeed*airSpeed*grabSpeed, playerRigidBody.velocity.y);
+				playerRigidBody.velocity = new Vector2 ((-1f) * maxMoveSpeed * airSpeed * grabSpeed, playerRigidBody.velocity.y);
 			}
 		}
 
 		// Se for pressionado para pular e o jogador estiver no chao
-		if(jump && grounded){
+		if (jump && grounded) {
 			// Muda a velocidade para a velocidade de pulo
-			playerRigidBody.velocity = new Vector2(playerRigidBody.velocity.x, jump_speed);
+			playerRigidBody.velocity = new Vector2 (playerRigidBody.velocity.x, jump_speed);
 		}
 
 		// Se a velocidade for maior que a velocidade maxima de caida
-		if(playerRigidBody.velocity.y < (-1)*maxFallingSpeed){
+		if (playerRigidBody.velocity.y < (-1) * maxFallingSpeed) {
 			// Mantem a velocidade maxima
-			playerRigidBody.velocity = new Vector2(playerRigidBody.velocity.x, (-1f)*maxFallingSpeed);
+			playerRigidBody.velocity = new Vector2 (playerRigidBody.velocity.x, (-1f) * maxFallingSpeed);
 		}
 
-		// Altera a velocidade do objeto sendo segurado para ser igual a velocidade do player
+		// Altera a posiçao do objeto sendo segurado para ficar a frente do player
 		if (grab && grabAvailable) {
-			detectedObject.rigidbody.velocity = playerRigidBody.velocity;
+			Vector2 grabbedPosition = playerRigidBody.position;
+			grabbedPosition.x += (facingRight) ? 1.2f : -1.2f;
+			grabbedPosition.y += 0.1f;
+			detectedObject.rigidbody.position = grabbedPosition;
+			// altera a velocidade do objeto para evitar que "escorregue" do jogador
+			detectedObject.rigidbody.velocity = new Vector2(0, playerRigidBody.velocity.y);
 		}
 	}
 }
