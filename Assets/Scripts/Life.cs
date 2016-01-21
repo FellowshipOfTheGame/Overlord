@@ -3,8 +3,11 @@ using System.Collections;
 
 public class Life : MonoBehaviour
 {
-    public Rigidbody2D rigid;
+
+    private Rigidbody2D rigid;
+    [HideInInspector]
     public CheckPoint lastCheckpoint;
+
     public int maxLives = 99;
     public int currentLives = 5;
 

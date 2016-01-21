@@ -44,28 +44,36 @@ public class ProgramablePlatform : MonoBehaviour
 	void Awake ()
     {
         renderer = GetComponent<SpriteRenderer>();
+        collider = GetComponent<BoxCollider2D>();
+
+        // Get original material and alpha
         originalMaterial = renderer.material;
         originalAlpha = originalMaterial.color.a;
-        collider = GetComponent<BoxCollider2D>();
-        if (timerPattern.Length > 0)
+
+        // If is timer based and size > 0
+        if (timerPattern.Length > 0 && onTimer)
         {
             timerState = timerPattern[0];
             if (timerState)
                 Reappear();
+            else
+                Disappear();
         }
         timerStart = Time.timeSinceLevelLoad;
 	}
 	
-	// Update is called once per frame
 	void Update ()
     {
         if (onTimer)
         {
+            // Get current time based on awake
             float time = Time.timeSinceLevelLoad - timerStart;
             int patternSize = timerPattern.Length;
+            // Calculate poisition based on time and pattern
             time = time * patternSize;
             int timerPosition = Mathf.FloorToInt(time / timerPeriod) % patternSize;
 
+            // If the current state is different from the timer state
             if(timerState != timerPattern[timerPosition])
             {
                 timerState = timerPattern[timerPosition];
@@ -80,6 +88,7 @@ public class ProgramablePlatform : MonoBehaviour
 
     void OnCollisionEnter2D()
     {
+        // If collision based, than start coroutine
         if(onCollide)
         {
             StartCoroutine("Fade");
@@ -117,11 +126,13 @@ public class ProgramablePlatform : MonoBehaviour
         bool timer = onTimer;
         onTimer = false;
 
-
+        // Wait some time before start disappearing
         yield return new WaitForSeconds(disappearTime);
 
         float startTime = Time.timeSinceLevelLoad;
         Color c = originalMaterial.color;
+
+        // Fade out time
         while (fade && fadeOut > (Time.timeSinceLevelLoad - startTime))
         {
             if (fade)
@@ -131,12 +142,17 @@ public class ProgramablePlatform : MonoBehaviour
             }
             yield return new WaitForEndOfFrame();
         }
+
+        // Fully disappear and disable collision
         Disappear();
 
+        // Wait some time before start reappearing
         yield return new WaitForSeconds(reappearTime);
 
         startTime = Time.timeSinceLevelLoad;
         c = originalMaterial.color;
+
+        // Fade in time
         while (fade && fadeIn > (Time.timeSinceLevelLoad - startTime))
         {
             if (fade)
@@ -146,8 +162,11 @@ public class ProgramablePlatform : MonoBehaviour
             }
             yield return new WaitForEndOfFrame();
         }
+
+        // Fully reappear and enable collision
         Reappear();
 
+        // Unexpected beahviour if using both timer and collision, just in case
         onTimer = timer;
         timerStart = Time.timeSinceLevelLoad;
     }

@@ -8,7 +8,10 @@ public class Spawn : MonoBehaviour
 
     void Start()
     {
+        // Instatiate with player prefab
         Instantiate(playerPrefab, transform.position, Quaternion.identity);
+
+        // Set checkpoint
         Life life = playerPrefab.GetComponent<Life>();
         if (life)
             life.lastCheckpoint = GetComponent<CheckPoint>();
