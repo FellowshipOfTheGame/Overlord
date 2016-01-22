@@ -25,4 +25,9 @@ public class CharacterAnimator : MonoBehaviour
     {
         anim.SetBool("grounded", grounded);
     }
+
+    public void SetGrabbing(bool grabbing)
+    {
+        anim.SetBool("grabbing", grabbing);
+    }
 }

@@ -3,15 +3,20 @@ using System.Collections;
 using UnityStandardAssets.CrossPlatformInput;
 
 [RequireComponent(typeof(PlatformerMovement))]
+[RequireComponent(typeof(CharacterAnimator))]
 public class CharacterController : MonoBehaviour {
 
 	private bool jumpPressed;
-	public bool grabbing;
+	private bool grabbing;
 	private PlatformerMovement character;
+    private CharacterAnimator anim;
+    private Rigidbody2D rigid;
 
 	// Na inicializacao, pega o script com as funcoes de movimento
 	private void Start () {
 		character = GetComponent<PlatformerMovement>();
+        anim = GetComponent<CharacterAnimator>();
+        rigid = GetComponent<Rigidbody2D>();
 	}
 	
 	private void Update () {
@@ -25,8 +30,12 @@ public class CharacterController : MonoBehaviour {
 		// Le o input de movimento
 		float xAxis = CrossPlatformInputManager.GetAxis ("Horizontal");
 		// Chama a funcao de movimento
-		character.Move(xAxis, jumpPressed, grabbing);
+		character.Move (xAxis, jumpPressed, grabbing);
 		// Muda jumpPressed para false para que o input seja analisado novamente
 		jumpPressed = false;
+
+        anim.SetVelocity(rigid.velocity.sqrMagnitude);
+        anim.SetGrounded(character.grounded);
+        anim.SetGrabbing(character.grabbing);
 	}
 }
