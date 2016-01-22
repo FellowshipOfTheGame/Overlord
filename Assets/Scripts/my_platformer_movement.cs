@@ -7,14 +7,12 @@ public class my_platformer_movement : MonoBehaviour {
 	public float jump_speed = 15f;
 	private bool facingRight;
 	public bool hitHead, grounded, grabAvailable;
-	private Animator animator; // Nao usei mas ta ae
 	private Transform topHead, feet;
 	private Rigidbody2D playerRigidBody;
 	private RaycastHit2D detectedObject;
 
 	void Awake () {
 		// Pega os componentes necessarios do player
-		animator = GetComponent<Animator>();
 		playerRigidBody = GetComponent<Rigidbody2D> ();
 		facingRight = true;
 		// Deve ser indicada a posicao do topo da cabeca e da sola dos pes
@@ -92,7 +90,7 @@ public class my_platformer_movement : MonoBehaviour {
 	// A variavel xMove armazena a direcao pressionada no eixo x
 	public void move(float xMove, bool jump, bool grab){
 		// A variavel grabspeed altera a valocidade de movimento do personagem caso ele esteja segurando um objeto
-		float grabSpeed = (grab && grabAvailable) ? 0.5f : 1f;
+		float grabSpeed = (grab && grabAvailable) ? 0.75f : 1f;
 		// Caso nenhuma direcao esteja sendo pressionada
 		if (xMove == 0) {
 			// Se o jogador estiver no chao
@@ -124,7 +122,7 @@ public class my_platformer_movement : MonoBehaviour {
 		// Se for pressionado para pular e o jogador estiver no chao
 		if (jump && grounded) {
 			// Muda a velocidade para a velocidade de pulo
-			playerRigidBody.velocity = new Vector2 (playerRigidBody.velocity.x, jump_speed);
+			playerRigidBody.velocity = new Vector2 (playerRigidBody.velocity.x, jump_speed*grabSpeed);
 		}
 
 		// Se a velocidade for maior que a velocidade maxima de caida
