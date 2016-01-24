@@ -5,14 +5,15 @@ using System.Collections;
 public class Spawn : MonoBehaviour
 {
     public GameObject playerPrefab;
+    public CameraFollow cameraScript;
 
     void Start()
     {
         // Instatiate with player prefab
-        Instantiate(playerPrefab, transform.position, Quaternion.identity);
-
+        GameObject player = (GameObject)Instantiate(playerPrefab, transform.position, Quaternion.identity);
+        cameraScript.player = player.GetComponent<CharacterController>();
         // Set checkpoint
-        Life life = playerPrefab.GetComponent<Life>();
+        Life life = player.GetComponent<Life>();
         if (life)
             life.lastCheckpoint = GetComponent<CheckPoint>();
     }

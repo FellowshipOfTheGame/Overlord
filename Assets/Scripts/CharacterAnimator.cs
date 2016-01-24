@@ -1,5 +1,6 @@
 ﻿using UnityEngine;
 using System.Collections;
+using System;
 
 [RequireComponent(typeof(Animator))]
 public class CharacterAnimator : MonoBehaviour
@@ -16,11 +17,6 @@ public class CharacterAnimator : MonoBehaviour
         anim.SetFloat("velocity", Mathf.Abs(vel));
     }
 
-    public void Die()
-    {
-        anim.SetTrigger("death");
-    }
-
     public void SetGrounded(bool grounded)
     {
         anim.SetBool("grounded", grounded);
@@ -29,5 +25,10 @@ public class CharacterAnimator : MonoBehaviour
     public void SetGrabbing(bool grabbing)
     {
         anim.SetBool("grabbing", grabbing);
+    }
+
+    internal void Attack()
+    {
+        anim.SetTrigger("attack");
     }
 }

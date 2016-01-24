@@ -10,7 +10,7 @@ public class PlatformerMovement : MonoBehaviour {
 	public bool hitHead, grounded, grabAvailable, grabbing;
 	private Transform head, feet;
 	private Rigidbody2D playerRigidBody;
-	private RaycastHit2D detectedObject;
+	private RaycastHit2D grabObjectRaycastHit;
 
 	void Awake () {
 		// Pega os componentes necessarios do player
@@ -88,22 +88,22 @@ public class PlatformerMovement : MonoBehaviour {
 
 
         // Se essas linhas colidirem com uma layer denominada ground (ou ainda Platform ou Object no caso dos pes) armazena numa variavel que houve colisao
-        hitHead = Physics2D.Raycast(rayCast, Vector2.up, headYOffset, layerMask);
+        hitHead = Physics2D.Raycast(rayCast, Vector2.up, headYOffset, layerMask).collider != null;
 
         rayCast.x -= headXOffset;
-		if (!hitHead) hitHead = Physics2D.Raycast(rayCast, Vector2.up, headYOffset, layerMask);
+		if (!hitHead) hitHead = Physics2D.Raycast(rayCast, Vector2.up, headYOffset, layerMask).collider != null;
         rayCast.x += 2 * headXOffset;
-        if (!hitHead) hitHead = Physics2D.Raycast(rayCast, Vector2.up, headYOffset, layerMask);
+        if (!hitHead) hitHead = Physics2D.Raycast(rayCast, Vector2.up, headYOffset, layerMask).collider != null;
 
 
         rayCast = new Vector2(feet.position.x, feet.position.y);
 
-        grounded = Physics2D.Raycast(rayCast, Vector2.down, headYOffset, layerMask);
+        grounded = Physics2D.Raycast(rayCast, Vector2.down, feetYOffset, layerMask).collider != null;
 
         rayCast.x -= feetXOffset;
-        if (!grounded) grounded = Physics2D.Raycast(rayCast, Vector2.down, feetYOffset, layerMask);
+        if (!grounded) grounded = Physics2D.Raycast(rayCast, Vector2.down, feetYOffset, layerMask).collider != null;
         rayCast.x += 2 * feetXOffset;
-        if (!grounded) grounded = Physics2D.Raycast(rayCast, Vector2.down, feetYOffset, layerMask);
+        if (!grounded) grounded = Physics2D.Raycast(rayCast, Vector2.down, feetYOffset, layerMask).collider != null;
 
 
         // Analisa a posicao do player para saber de onde os raios deve ser criados
@@ -113,21 +113,20 @@ public class PlatformerMovement : MonoBehaviour {
         // Analisa se os raios devem ser criados pelo lado esquerdo ou direito
         playerPosition.x += (facingRight) ? grabXOffset : (-1) * grabXOffset;
 
-		// Checa as tres linhas, de cima para baixo, ate que uma delas encontre um objeto
-		grabAvailable = Physics2D.Raycast (playerPosition, (facingRight) ? Vector2.right : Vector2.left, grabXOffset, layerMask);
+        // Checa as tres linhas, de cima para baixo, ate que uma delas encontre um objeto
+        grabObjectRaycastHit = Physics2D.Raycast (playerPosition, (facingRight) ? Vector2.right : Vector2.left, grabXOffset, layerMask);
+        grabAvailable = grabObjectRaycastHit.collider != null;
 
         playerPosition.y -= grabYOffset;
         if (!grabAvailable)
-			grabAvailable = Physics2D.Raycast (playerPosition, (facingRight) ? Vector2.right : Vector2.left, grabXOffset, layerMask);
+            grabObjectRaycastHit = Physics2D.Raycast (playerPosition, (facingRight) ? Vector2.right : Vector2.left, grabXOffset, layerMask);
+        grabAvailable = grabObjectRaycastHit.collider != null;
 
         playerPosition.y += 2 * grabYOffset;
         if (!grabAvailable)
-			grabAvailable = Physics2D.Raycast (playerPosition, (facingRight) ? Vector2.right : Vector2.left, grabXOffset, layerMask);
-
-		// Caso tenha detectado colisao com um objeto, armazena numa variavel qual o objeto com o qual houve a colisao
-		if(grabAvailable)
-			detectedObject = Physics2D.Raycast (playerPosition, (facingRight) ? Vector2.right : Vector2.left, 0.5f, layerMask);
-	}
+            grabObjectRaycastHit = Physics2D.Raycast (playerPosition, (facingRight) ? Vector2.right : Vector2.left, grabXOffset, layerMask);
+        grabAvailable = grabObjectRaycastHit.collider != null;
+    }
 
 	// Chama a funcao de raycasting acima
 	void Update () {
@@ -143,13 +142,13 @@ public class PlatformerMovement : MonoBehaviour {
 		// Caso o jogador esteja carregando um objeto, muda o objeto de lado
 		if (grab && grabAvailable) {
 			// Armazena a posicao do objeto numa variavel (o valor x nao pode ser acessado diretamente)
-			Vector2 objectPosition = detectedObject.transform.position;
+			Vector2 objectPosition = grabObjectRaycastHit.transform.position;
 			// Calcula a diferenca no eixo x
 			float difference = objectPosition.x - this.transform.position.x;
 			// Obtem qual deve ser a nova posicao
 			objectPosition.x -= 2 * difference;
 			// altera a posicao do objeto
-			detectedObject.transform.position = objectPosition;
+			grabObjectRaycastHit.transform.position = objectPosition;
 		}
 		// Inverte a variavel
 		facingRight = !facingRight;
@@ -210,9 +209,9 @@ public class PlatformerMovement : MonoBehaviour {
 			Vector2 grabbedPosition = playerRigidBody.position;
 			grabbedPosition.x += (facingRight) ? grabbedObjectDistance.x : -grabbedObjectDistance.x;
 			grabbedPosition.y += grabbedObjectDistance.y;
-			detectedObject.rigidbody.position = grabbedPosition;
-			// altera a velocidade do objeto para evitar que "escorregue" do jogador
-			detectedObject.rigidbody.velocity = new Vector2(0, playerRigidBody.velocity.y);
+            grabObjectRaycastHit.rigidbody.position = grabbedPosition;
+            // altera a velocidade do objeto para evitar que "escorregue" do jogador
+            grabObjectRaycastHit.rigidbody.velocity = new Vector2(0, playerRigidBody.velocity.y);
 		}
 
         grabbing = grab & grabAvailable;

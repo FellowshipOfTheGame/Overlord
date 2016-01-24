@@ -24,6 +24,8 @@ public class CharacterController : MonoBehaviour {
 		if(!jumpPressed) jumpPressed = CrossPlatformInputManager.GetButtonDown ("Jump");
 		// Analisa se o botao left ctrl esta sendo pressionado
 		grabbing = Input.GetKey (KeyCode.LeftControl);
+        if (CrossPlatformInputManager.GetButtonDown("Fire1"))
+            anim.Attack();
 	}
 
 	private void FixedUpdate(){
