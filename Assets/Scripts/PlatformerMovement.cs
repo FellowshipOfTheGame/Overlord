@@ -20,6 +20,13 @@ public class PlatformerMovement : MonoBehaviour {
 		head = transform.Find ("head");
 		feet = transform.Find ("feet");
 	}
+	
+	public float headXOffset = 0.5f;
+	public float headYOffset = 0.1f;
+	public float feetXOffset = 0.5f;
+	public float feetYOffset = 0.1f;
+	public float grabXOffset = 0.5f;
+	public float grabYOffset = 0.5f;
 
 	void OnDrawGizmos()
     {
@@ -70,62 +77,58 @@ public class PlatformerMovement : MonoBehaviour {
         rayEnd.y -= grabYOffset;
         Gizmos.DrawLine(rayBegin, rayEnd);
 
-        rayBegin.y -= 2 * grabYOffset;
-        rayEnd.y -= 2 * grabYOffset;
+        rayBegin.y += 2 * grabYOffset;
+        rayEnd.y += 2 * grabYOffset;
         Gizmos.DrawLine(rayBegin, rayEnd);
     }
-
-    public float headXOffset = 0.5f;
-    public float headYOffset = 0.1f;
-    public float feetXOffset = 0.5f;
-    public float feetYOffset = 0.1f;
-    public float grabXOffset = 0.5f;
-    public float grabYOffset = 0.5f;
 
     void Raycast(){
         Vector2 rayCast = new Vector2(head.position.x, head.position.y);
         int layerMask = 1 << LayerMask.NameToLayer("Ground");
 
 
-        // Se essas linhas colidirem com uma layer denominada ground (ou ainda Platform ou Object no caso dos pes) armazena numa variavel que houve colisao
+        // Se essas linhas colidirem com uma layer denominada ground (ou ainda Object no caso dos pes) armazena numa variavel que houve colisao
         hitHead = Physics2D.Raycast(rayCast, Vector2.up, headYOffset, layerMask).collider != null;
 
         rayCast.x -= headXOffset;
-		if (!hitHead) hitHead = Physics2D.Raycast(rayCast, Vector2.up, headYOffset, layerMask).collider != null;
+		if (!hitHead) hitHead = Physics2D.Raycast(rayCast, Vector2.up, headYOffset, layerMask);
         rayCast.x += 2 * headXOffset;
-        if (!hitHead) hitHead = Physics2D.Raycast(rayCast, Vector2.up, headYOffset, layerMask).collider != null;
+        if (!hitHead) hitHead = Physics2D.Raycast(rayCast, Vector2.up, headYOffset, layerMask);
 
 
+		layerMask = layerMask | (1 << LayerMask.NameToLayer ("Object"));
         rayCast = new Vector2(feet.position.x, feet.position.y);
 
-        grounded = Physics2D.Raycast(rayCast, Vector2.down, feetYOffset, layerMask).collider != null;
+        grounded = Physics2D.Raycast(rayCast, Vector2.down, feetYOffset, layerMask);
 
         rayCast.x -= feetXOffset;
-        if (!grounded) grounded = Physics2D.Raycast(rayCast, Vector2.down, feetYOffset, layerMask).collider != null;
+        if (!grounded) grounded = Physics2D.Raycast(rayCast, Vector2.down, feetYOffset, layerMask);
         rayCast.x += 2 * feetXOffset;
-        if (!grounded) grounded = Physics2D.Raycast(rayCast, Vector2.down, feetYOffset, layerMask).collider != null;
+        if (!grounded) grounded = Physics2D.Raycast(rayCast, Vector2.down, feetYOffset, layerMask);
 
 
-        // Analisa a posicao do player para saber de onde os raios deve ser criados
+        // Analisa a posicao do player para saber de onde os raios devem ser criados
         Vector2 playerPosition = playerRigidBody.position;
         layerMask = 1 << LayerMask.NameToLayer("Object");
 
         // Analisa se os raios devem ser criados pelo lado esquerdo ou direito
-        playerPosition.x += (facingRight) ? grabXOffset : (-1) * grabXOffset;
+        //playerPosition.x += (facingRight) ? grabXOffset : (-1) * grabXOffset;
 
         // Checa as tres linhas, de cima para baixo, ate que uma delas encontre um objeto
         grabObjectRaycastHit = Physics2D.Raycast (playerPosition, (facingRight) ? Vector2.right : Vector2.left, grabXOffset, layerMask);
         grabAvailable = grabObjectRaycastHit.collider != null;
 
         playerPosition.y -= grabYOffset;
-        if (!grabAvailable)
-            grabObjectRaycastHit = Physics2D.Raycast (playerPosition, (facingRight) ? Vector2.right : Vector2.left, grabXOffset, layerMask);
-        grabAvailable = grabObjectRaycastHit.collider != null;
+        if (!grabAvailable) {
+			grabObjectRaycastHit = Physics2D.Raycast (playerPosition, (facingRight) ? Vector2.right : Vector2.left, grabXOffset, layerMask);
+			grabAvailable = grabObjectRaycastHit.collider != null;
+		}
 
         playerPosition.y += 2 * grabYOffset;
-        if (!grabAvailable)
-            grabObjectRaycastHit = Physics2D.Raycast (playerPosition, (facingRight) ? Vector2.right : Vector2.left, grabXOffset, layerMask);
-        grabAvailable = grabObjectRaycastHit.collider != null;
+        if (!grabAvailable) {
+			grabObjectRaycastHit = Physics2D.Raycast (playerPosition, (facingRight) ? Vector2.right : Vector2.left, grabXOffset, layerMask);
+			grabAvailable = grabObjectRaycastHit.collider != null;
+		}
     }
 
 	// Chama a funcao de raycasting acima
@@ -164,14 +167,8 @@ public class PlatformerMovement : MonoBehaviour {
 		float speedModifier = (grab && grabAvailable) ? grabSpeedModifier : 1f;
 		// Caso nenhuma direcao esteja sendo pressionada
 		if (xMove == 0) {
-			// Se o jogador estiver no chao
-			if (grounded)
-				// Para completamente
-				playerRigidBody.velocity = Vector2.zero;
-			// Caso contrario
-			else
-				// Zera apenas a velocidade no eixo x
-				playerRigidBody.velocity = new Vector2 (0, playerRigidBody.velocity.y);
+			// Zera apenas a velocidade no eixo x
+			playerRigidBody.velocity = new Vector2 (0, playerRigidBody.velocity.y);
 		} else {
 			// Caso o jogador tente se mover para um lado oposto ao qual esta atualmente virado, realiza o giro
 			if (!((xMove > 0 && facingRight) || (xMove < 0 && !facingRight)))
