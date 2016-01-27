@@ -111,9 +111,6 @@ public class PlatformerMovement : MonoBehaviour {
         Vector2 playerPosition = playerRigidBody.position;
         layerMask = 1 << LayerMask.NameToLayer("Object");
 
-        // Analisa se os raios devem ser criados pelo lado esquerdo ou direito
-        //playerPosition.x += (facingRight) ? grabXOffset : (-1) * grabXOffset;
-
         // Checa as tres linhas, de cima para baixo, ate que uma delas encontre um objeto
         grabObjectRaycastHit = Physics2D.Raycast (playerPosition, (facingRight) ? Vector2.right : Vector2.left, grabXOffset, layerMask);
         grabAvailable = grabObjectRaycastHit.collider != null;
@@ -137,34 +134,40 @@ public class PlatformerMovement : MonoBehaviour {
 	}
 
 	// Funcao para realizar o giro
-	void Flip(bool grab){
+	void Flip(){
 		// Faz com que os objetos ligados ao player mudem de lado em relaçao ao eixo x
 		Vector3 aux = transform.localScale;
 		aux.x *= -1;
 		transform.localScale = aux;
-		// Caso o jogador esteja carregando um objeto, muda o objeto de lado
-		if (grab && grabAvailable) {
-			// Armazena a posicao do objeto numa variavel (o valor x nao pode ser acessado diretamente)
-			Vector2 objectPosition = grabObjectRaycastHit.transform.position;
-			// Calcula a diferenca no eixo x
-			float difference = objectPosition.x - this.transform.position.x;
-			// Obtem qual deve ser a nova posicao
-			objectPosition.x -= 2 * difference;
-			// altera a posicao do objeto
-			grabObjectRaycastHit.transform.position = objectPosition;
-		}
 		// Inverte a variavel
 		facingRight = !facingRight;
 	}
 
     public float grabSpeedModifier = 0.75f;
-    public float groundSpeedModifier = 0.75f;
-    public Vector2 grabbedObjectDistance = new Vector2(1.2f, 0.1f);
+    public float airSpeedModifier = 0.75f;
+	private float distance = 0;
 
 	// A variavel xMove armazena a direcao pressionada no eixo x
 	public void Move(float xMove, bool jump, bool grab){
+		// Checa se o player esta no chao e tentando agarrar um objeto
+		grabbing = grab && grabAvailable && grounded;
+		
+		if (grabbing) {
+			// Quando começar a empurrar a caixa, armazena a distancia entre ela e o player
+			if(distance == 0)
+				// adiciona-se 0.1 a distancia para evitar que o contato direto com o colisor do objeto impeça o movimento
+				distance = playerRigidBody.position.x - grabObjectRaycastHit.rigidbody.position.x + (facingRight ? -0.1f: 0.1f);
+			// Faz com que a caixa permaneça nessa distancia
+			Vector2 grabbedPosition = grabObjectRaycastHit.rigidbody.position;
+			grabbedPosition.x = playerRigidBody.position.x - distance;
+			grabObjectRaycastHit.rigidbody.position = grabbedPosition;
+			// Caso nao esteja carregando uma caixa
+		} else
+			// Reseta o valor da distancia para zero, garantindo que o novo valor sera armazenado
+			distance = 0;
+
 		// A variavel grabspeed altera a valocidade de movimento do personagem caso ele esteja segurando um objeto
-		float speedModifier = (grab && grabAvailable) ? grabSpeedModifier : 1f;
+		float speedModifier = (grabbing) ? grabSpeedModifier : 1f;
 		// Caso nenhuma direcao esteja sendo pressionada
 		if (xMove == 0) {
 			// Zera apenas a velocidade no eixo x
@@ -172,27 +175,29 @@ public class PlatformerMovement : MonoBehaviour {
 		} else {
 			// Caso o jogador tente se mover para um lado oposto ao qual esta atualmente virado, realiza o giro
 			if (!((xMove > 0 && facingRight) || (xMove < 0 && !facingRight)))
-				Flip (grab);
+				// A nao ser que esteja empurrando/puxando um objeto
+				if (!grabbing)
+					Flip ();
 
             // A variavel airspeed armazena um modificador, para que no ar a velocidade do jogador seja tres quartos da padrao
-            speedModifier  *= (grounded) ? 1f : groundSpeedModifier;
+            speedModifier  *= (grounded) ? 1f : airSpeedModifier;
 
 			// Caso seja pressionado para movimentar-se a direita
 			if (xMove > 0) {
 				// Altera a velocidade com valor positivo
 				playerRigidBody.velocity = new Vector2 (maxMoveSpeed * speedModifier, playerRigidBody.velocity.y);
-				// E caso seja pressionado para movimentar-se a esquerda
+			// E caso seja pressionado para movimentar-se a esquerda
 			} else {
 				// Altera a velocidade com valor negativo
 				playerRigidBody.velocity = new Vector2 ((-1f) * maxMoveSpeed * speedModifier, playerRigidBody.velocity.y);
 			}
 		}
 
-		// Se for pressionado para pular e o jogador estiver no chao
-		if (jump && grounded) {
+		// Se for pressionado para pular e o jogador estiver no chao (sem empurrar ou puxar uma caixa)
+		if (jump && grounded && !grabbing) {
             // Muda a velocidade para a velocidade de pulo
-            speedModifier = (grab && grabAvailable) ? grabSpeedModifier : 1f;
-            playerRigidBody.velocity = new Vector2 (playerRigidBody.velocity.x, jumpSpeed * speedModifier);
+            //speedModifier = (grab && grabAvailable) ? grabSpeedModifier : 1f;
+            playerRigidBody.velocity = new Vector2 (playerRigidBody.velocity.x, jumpSpeed);
 		}
 
 		// Se a velocidade for maior que a velocidade maxima de caida
@@ -201,16 +206,5 @@ public class PlatformerMovement : MonoBehaviour {
 			playerRigidBody.velocity = new Vector2 (playerRigidBody.velocity.x, (-1f) * maxFallingSpeed);
 		}
 
-		// Altera a posiçao do objeto sendo segurado para ficar a frente do player
-		if (grab && grabAvailable) {
-			Vector2 grabbedPosition = playerRigidBody.position;
-			grabbedPosition.x += (facingRight) ? grabbedObjectDistance.x : -grabbedObjectDistance.x;
-			grabbedPosition.y += grabbedObjectDistance.y;
-            grabObjectRaycastHit.rigidbody.position = grabbedPosition;
-            // altera a velocidade do objeto para evitar que "escorregue" do jogador
-            grabObjectRaycastHit.rigidbody.velocity = new Vector2(0, playerRigidBody.velocity.y);
-		}
-
-        grabbing = grab & grabAvailable;
 	}
 }
