@@ -1,15 +1,16 @@
 ﻿using UnityEngine;
+using UnityEngine.SceneManagement;
 using System.Collections;
 
 public class Life : MonoBehaviour
 {
-
-    private Rigidbody2D rigid;
     [HideInInspector]
     public CheckPoint lastCheckpoint;
+    private Rigidbody2D rigid;
 
     public int maxLives = 99;
     public int currentLives = 5;
+    public bool gameOver = false;
 
 
     void Start()
@@ -19,6 +20,7 @@ public class Life : MonoBehaviour
 
     bool GameOver()
     {
+        gameOver = true;
         return true;
     }
 

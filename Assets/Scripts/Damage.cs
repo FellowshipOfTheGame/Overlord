@@ -4,16 +4,9 @@ using System.Collections;
 public class Damage : MonoBehaviour {
     public int hitPointDamage = 1;
     public float pushForce = 10f;
-    
-	void Start () {
-	}
-	
-	// Update is called once per frame
-	void Update () {
+    public string enemyTag = "Player";
 
-	}
-
-    void OnCollisionEnter2D(Collision2D col)
+    void OnCollisionStay2D(Collision2D col)
     {
         Health objectHealth = col.gameObject.GetComponent<Health>();
         if (objectHealth)

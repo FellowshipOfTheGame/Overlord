@@ -6,7 +6,8 @@ public class CameraFollow : MonoBehaviour
 {
     public CharacterController player;
     public float velocity;
-    public Vector2 velMultiplier = new Vector2(0.5f, 0.5f);
+    public float velMultiplier = 0.5f;
+    public float airOrtographicSize = 10f;
 
     private Camera cam;
     private float originalSize;
@@ -14,8 +15,8 @@ public class CameraFollow : MonoBehaviour
     private Vector3 positionTarget;
     private float sizeTarget;
 
-    private Transform playerTransform;
     private Rigidbody2D playerRigid;
+    private PlatformerMovement playerMov;
 
 
     // Use this for initialization
@@ -31,17 +32,17 @@ public class CameraFollow : MonoBehaviour
         if (playerRigid == null)
         {
             playerRigid = player.GetComponent<Rigidbody2D>();
-            playerTransform = player.transform;
             transf.position = playerRigid.position;
+            playerMov = player.GetComponent<PlatformerMovement>();
             return;
         }
         positionTarget = playerRigid.position;
         positionTarget.z = -1f;
         if (!Mathf.Approximately(playerRigid.velocity.x, 0f))
-            positionTarget.x += playerRigid.velocity.x * velMultiplier.x;
+            positionTarget.x += playerRigid.velocity.x * velMultiplier;
 
-        if (playerRigid.velocity.y > 0f)
-            sizeTarget = originalSize + playerRigid.velocity.y * velMultiplier.y;
+        if (!playerMov.grounded)
+            sizeTarget = airOrtographicSize;
         else
             sizeTarget = originalSize;
 

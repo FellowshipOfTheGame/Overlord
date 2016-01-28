@@ -5,10 +5,13 @@ using System.Collections;
 [RequireComponent(typeof(SpriteRenderer))]
 public class ProgramablePlatform : MonoBehaviour
 {
-    private new SpriteRenderer renderer;
-    private new BoxCollider2D collider;
+    private SpriteRenderer render;
+    private SpriteRenderer[] renders;
+    private BoxCollider2D boxCollider;
     private Material originalMaterial;
+    private Material[] originalMaterials;
     private float originalAlpha;
+    private float[] originalAlphas;
 
     [Header("Fade")]
     [Tooltip("Platform will fade on trigger or use material?")]
@@ -41,14 +44,33 @@ public class ProgramablePlatform : MonoBehaviour
     private bool timerState;
     private float timerStart;
 
-	void Awake ()
+    void Awake()
     {
-        renderer = GetComponent<SpriteRenderer>();
-        collider = GetComponent<BoxCollider2D>();
+        render = GetComponent<SpriteRenderer>();
+        boxCollider = GetComponent<BoxCollider2D>();
 
         // Get original material and alpha
-        originalMaterial = renderer.material;
-        originalAlpha = originalMaterial.color.a;
+        if (render)
+        {
+            originalMaterial = render.material;
+            originalAlpha = originalMaterial.color.a;
+        }
+        else
+        {
+            renders = GetComponentsInChildren<SpriteRenderer>();
+            if (renders != null && renders.Length > 0)
+            {
+                originalMaterials = new Material[renders.Length];
+                originalAlphas = new float[renders.Length];
+                for (int i = 0; i < originalMaterials.Length; i++)
+                {
+                    originalMaterials[i] = renders[i].material;
+                    originalAlphas[i] = originalMaterials[i].color.a;
+                }
+            }
+
+        }
+
 
         // If is timer based and size > 0
         if (timerPattern.Length > 0 && onTimer)
@@ -60,9 +82,9 @@ public class ProgramablePlatform : MonoBehaviour
                 Disappear();
         }
         timerStart = Time.timeSinceLevelLoad;
-	}
-	
-	void Update ()
+    }
+
+    void Update()
     {
         if (onTimer)
         {
@@ -74,7 +96,7 @@ public class ProgramablePlatform : MonoBehaviour
             int timerPosition = Mathf.FloorToInt(time / timerPeriod) % patternSize;
 
             // If the current state is different from the timer state
-            if(timerState != timerPattern[timerPosition])
+            if (timerState != timerPattern[timerPosition])
             {
                 timerState = timerPattern[timerPosition];
                 if (timerState)
@@ -84,12 +106,12 @@ public class ProgramablePlatform : MonoBehaviour
             }
         }
 
-	}
+    }
 
     void OnCollisionEnter2D()
     {
         // If collision based, than start coroutine
-        if(onCollide)
+        if (onCollide)
         {
             StartCoroutine("Fade");
         }
@@ -98,27 +120,56 @@ public class ProgramablePlatform : MonoBehaviour
     void Disappear()
     {
         if (!fade)
-            renderer.sharedMaterial = material;
+        {
+            if (render)
+                render.material = material;
+            else for (int i = 0; i < renders.Length; i++)
+                    renders[i].material = material;
+        }
         else
         {
-            Color c = originalMaterial.color;
-            c.a = fadeAlpha;
-            originalMaterial.color = c;
+            if (render)
+            {
+                Color c = originalMaterial.color;
+                c.a = fadeAlpha;
+                originalMaterial.color = c;
+            }
+            else for (int i = 0; i < renders.Length; i++)
+                {
+                    Color c = originalMaterials[i].color;
+                    c.a = fadeAlpha;
+                    originalMaterials[i].color = c;
+                }
+
         }
-        collider.enabled = false;
+        boxCollider.enabled = false;
     }
 
     void Reappear()
     {
         if (!fade)
-            renderer.sharedMaterial = originalMaterial;
+        {
+            if (render)
+                render.material = originalMaterial;
+            else for (int i = 0; i < renders.Length; i++)
+                    renders[i].material = originalMaterials[i];
+        }
         else
         {
-            Color c = originalMaterial.color;
-            c.a = originalAlpha;
-            originalMaterial.color = c;
+            if (render)
+            {
+                Color c = originalMaterial.color;
+                c.a = fadeAlpha;
+                originalMaterial.color = c;
+            }
+            else for (int i = 0; i < renders.Length; i++)
+                {
+                    Color c = originalMaterials[i].color;
+                    c.a = originalAlphas[i];
+                    originalMaterials[i].color = c;
+                }
         }
-        collider.enabled = true;
+        boxCollider.enabled = true;
     }
 
     IEnumerator Fade()
@@ -130,15 +181,25 @@ public class ProgramablePlatform : MonoBehaviour
         yield return new WaitForSeconds(disappearTime);
 
         float startTime = Time.timeSinceLevelLoad;
-        Color c = originalMaterial.color;
 
         // Fade out time
         while (fade && fadeOut > (Time.timeSinceLevelLoad - startTime))
         {
             if (fade)
             {
-                c.a = Mathf.Lerp(originalAlpha, fadeAlpha, (Time.timeSinceLevelLoad - startTime) / fadeOut);
-                originalMaterial.color = c;
+                float alpha = Mathf.Lerp(originalAlpha, fadeAlpha, (Time.timeSinceLevelLoad - startTime) / fadeOut);
+                if (render)
+                {
+                    Color c = originalMaterial.color;
+                    c.a = alpha;
+                    originalMaterial.color = c;
+                }
+                else for (int i = 0; i < renders.Length; i++)
+                    {
+                        Color c = originalMaterials[i].color;
+                        c.a = alpha;
+                        originalMaterials[i].color = c;
+                    }
             }
             yield return new WaitForEndOfFrame();
         }
@@ -150,15 +211,25 @@ public class ProgramablePlatform : MonoBehaviour
         yield return new WaitForSeconds(reappearTime);
 
         startTime = Time.timeSinceLevelLoad;
-        c = originalMaterial.color;
 
         // Fade in time
         while (fade && fadeIn > (Time.timeSinceLevelLoad - startTime))
         {
             if (fade)
             {
-                c.a = Mathf.Lerp(fadeAlpha, originalAlpha, (Time.timeSinceLevelLoad - startTime) / fadeIn);
-                originalMaterial.color = c;
+                float alpha = Mathf.Lerp(fadeAlpha, originalAlpha, (Time.timeSinceLevelLoad - startTime) / fadeIn);
+                if (render)
+                {
+                    Color c = originalMaterial.color;
+                    c.a = alpha;
+                    originalMaterial.color = c;
+                }
+                else for (int i = 0; i < renders.Length; i++)
+                    {
+                        Color c = originalMaterials[i].color;
+                        c.a = alpha;
+                        originalMaterials[i].color = c;
+                    }
             }
             yield return new WaitForEndOfFrame();
         }

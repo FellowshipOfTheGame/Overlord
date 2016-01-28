@@ -1,10 +1,12 @@
 ﻿using UnityEngine;
 using System.Collections;
 
-[RequireComponent(typeof(Life))]
+
 public class Health : MonoBehaviour
 {
-
+    public GameObject heartPrefab;
+    public float heartSize;
+    public Vector3 heartOffset;
     public int maxHitPoints = 3;
     public int currentHitPoints = 3;
     public bool isInvulnerable = false;
@@ -16,6 +18,7 @@ public class Health : MonoBehaviour
     private Rigidbody2D rigid;
     private float timer;
     private Material originalMaterial;
+    private Stack hearts;
 
     void Start()
     {
@@ -27,6 +30,17 @@ public class Health : MonoBehaviour
             
         if (renderer)
             originalMaterial = renderer.material;
+        if (!heartPrefab)
+            return;
+
+        hearts = new Stack();
+        for (int i = 0; i < maxHitPoints; i++)
+        {
+            GameObject heart = Instantiate(heartPrefab);
+            heart.transform.SetParent(gameObject.transform, false);
+            heart.transform.localPosition = new Vector3(i * heartSize, 0, 0) + heartOffset;
+            hearts.Push(heart);
+        }
     }
 
     void Invulnerable()
@@ -56,9 +70,13 @@ public class Health : MonoBehaviour
 
     void Kill()
     {
-        if (life)
+        if (!life)
+            Destroy(gameObject);
+        else
+        {
+            currentHitPoints = maxHitPoints;
             life.Die();
-        currentHitPoints = maxHitPoints;
+        }
     }
 
     public void Damage(GameObject source, Damage sourceDamage)
@@ -76,6 +94,11 @@ public class Health : MonoBehaviour
                 force *= sourceDamage.pushForce;
                 rigid.AddForce(force, ForceMode2D.Impulse);
             }
+
+            if (heartPrefab)
+                for (int i = 0; i < sourceDamage.hitPointDamage; i++)
+                    Destroy((GameObject)hearts.Pop());
+
             currentHitPoints -= sourceDamage.hitPointDamage;
             Invulnerable();
         }
