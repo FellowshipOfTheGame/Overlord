@@ -34,12 +34,33 @@ public class Health : MonoBehaviour
             return;
 
         hearts = new Stack();
-        for (int i = 0; i < maxHitPoints; i++)
+        UpdateHP();
+    }
+
+    void UpdateHP()
+    {
+
+        if (heartPrefab)
         {
-            GameObject heart = Instantiate(heartPrefab);
-            heart.transform.SetParent(gameObject.transform, false);
-            heart.transform.localPosition = new Vector3(i * heartSize, 0, 0) + heartOffset;
-            hearts.Push(heart);
+            if(hearts.Count < currentHitPoints)
+            {
+                int size = currentHitPoints - hearts.Count;
+                for (int i = 0; i < size; i++)
+                {
+                    GameObject heart = Instantiate(heartPrefab);
+                    heart.transform.SetParent(gameObject.transform, false);
+                    hearts.Push(heart);
+                }
+            }
+            else
+            {
+                int size = hearts.Count - currentHitPoints;
+                for (int i = 0; i < size; i++)
+                    Destroy((GameObject)hearts.Pop());
+            }
+            object[] array = hearts.ToArray();
+            for (int i = 0; i < hearts.Count; i++)
+                ((GameObject)array[i]).transform.localPosition = new Vector3((i - array.Length / 2f) * heartSize, 0f, 0f) + heartOffset;
         }
     }
 
@@ -55,7 +76,7 @@ public class Health : MonoBehaviour
         Color c = originalMaterial.color;
         float originalAlpha = c.a;
 
-        while (Time.time < time + invulnerableTime)
+        while (Time.time < time + invulnerableTime && isInvulnerable)
         {
             c.a = fadeAlpha;
             originalMaterial.color = c;
@@ -75,15 +96,18 @@ public class Health : MonoBehaviour
         else
         {
             currentHitPoints = maxHitPoints;
+            isInvulnerable = false;
             life.Die();
         }
     }
 
     public void Damage(GameObject source, Damage sourceDamage)
     {
-        if (isInvulnerable)
+        if (sourceDamage.instaKill)
+            Kill();
+        else if (isInvulnerable)
             return;
-        if (sourceDamage.hitPointDamage < 0 || currentHitPoints - sourceDamage.hitPointDamage < 1)
+        else if (sourceDamage.hitPointDamage < 0 || currentHitPoints - sourceDamage.hitPointDamage < 1)
             Kill();
         else
         {
@@ -95,11 +119,8 @@ public class Health : MonoBehaviour
                 rigid.AddForce(force, ForceMode2D.Impulse);
             }
 
-            if (heartPrefab)
-                for (int i = 0; i < sourceDamage.hitPointDamage; i++)
-                    Destroy((GameObject)hearts.Pop());
-
             currentHitPoints -= sourceDamage.hitPointDamage;
+            UpdateHP();
             Invulnerable();
         }
     }
