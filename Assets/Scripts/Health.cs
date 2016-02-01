@@ -1,7 +1,7 @@
 ﻿using UnityEngine;
 using System.Collections;
 
-
+[RequireComponent(typeof(AudioSource))]
 public class Health : MonoBehaviour
 {
     public GameObject heartPrefab;
@@ -13,18 +13,21 @@ public class Health : MonoBehaviour
     public float invulnerableTime = 2f;
     public float fadeAlpha = 0.2f;
     public float fadeTime = 0.1f;
+    public AudioClip[] damageClips;
 
     private Life life;
     private Rigidbody2D rigid;
     private float timer;
     private Material originalMaterial;
     private Stack hearts;
+    private AudioSource audioSource;
 
     void Start()
     {
         rigid = GetComponent<Rigidbody2D>();
         life = GetComponent<Life>();
         Renderer renderer = GetComponent<SpriteRenderer>();
+        audioSource = GetComponent<AudioSource>();
         if (renderer == null)
             renderer = GetComponent<MeshRenderer>();
             
@@ -111,6 +114,8 @@ public class Health : MonoBehaviour
             Kill();
         else
         {
+            if(damageClips != null && damageClips.Length > 0)
+                audioSource.PlayOneShot(damageClips[Random.Range(0, damageClips.Length - 1)]);
             if (rigid)
             {
                 Vector2 force = transform.position - source.transform.position;

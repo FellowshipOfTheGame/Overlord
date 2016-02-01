@@ -5,6 +5,7 @@ using System;
 [RequireComponent(typeof(Animator))]
 public class CharacterAnimator : MonoBehaviour
 {
+
     private Animator anim;
 
     void Awake()

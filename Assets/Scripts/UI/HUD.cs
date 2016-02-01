@@ -23,7 +23,7 @@ public class HUD : MonoBehaviour
         UpdateHP();
         UpdateLife();
         if (playerLife.gameOver)
-            gameOver.active = true;
+            gameOver.SetActive(true);
     }
 
     void UpdateLife()
